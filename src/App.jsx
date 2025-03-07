@@ -7,7 +7,7 @@ import Header from "./components/Header";
 
 function App() {
   const [subjects, setSubjects] = useState([]);
-  const [topSubjectsCount, setTopSubjectsCount] = useState(3);
+  const [topSubjectsCount, setTopSubjectsCount] = useState(5);
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
 
