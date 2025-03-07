@@ -168,6 +168,21 @@ function App() {
     setResults([]);
   };
 
+  const handleTopSubjectsChange = (e) => {
+    const value = e.target.value;
+    if (value === "" || /^\d+$/.test(value)) {
+      setTopSubjectsCount(value === "" ? "" : parseInt(value, 10));
+    }
+  };
+
+  const handleTopSubjectsBlur = () => {
+    const validValue =
+      topSubjectsCount === ""
+        ? 1
+        : Math.max(1, Math.min(topSubjectsCount, subjects.length));
+    setTopSubjectsCount(validValue);
+  };
+
   return (
     <div className="w-screen flex justify-center">
       <div className="app-container">
@@ -201,9 +216,8 @@ function App() {
                   min="1"
                   max={subjects.length}
                   value={topSubjectsCount}
-                  onChange={(e) =>
-                    setTopSubjectsCount(parseInt(e.target.value) || 1)
-                  }
+                  onChange={handleTopSubjectsChange}
+                  onBlur={handleTopSubjectsBlur}
                 />
                 <label htmlFor="topSubjects">subjects combination</label>
               </div>
