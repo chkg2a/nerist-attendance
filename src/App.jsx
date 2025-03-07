@@ -1,5 +1,6 @@
 // App.jsx
 import { useState, useEffect } from "react";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./App.css";
 import SubjectForm from "./components/SubjectForm";
 import Results from "./components/Results";
@@ -188,7 +189,7 @@ function App() {
       <div className="app-container">
         <div className="app-content">
           <Header />
-
+          <SpeedInsights/>
           <div className="form-container">
             <h2 className="section-title">Your Subjects</h2>
 
