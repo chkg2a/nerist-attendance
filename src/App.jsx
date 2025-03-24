@@ -79,7 +79,6 @@ function App() {
       prevSubjects.map((subject) => {
         if (subject.id === id) {
           if (field === 'present' || field === 'total') {
-            console.log(field)
             return { ...subject, [field]: Number(value) };
           }
           return { ...subject, [field]: value };
