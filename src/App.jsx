@@ -1,96 +1,54 @@
-// App.jsx
 import { useState, useEffect } from "react";
 import "./App.css";
 import SubjectForm from "./components/SubjectForm";
 import Results from "./components/Results";
 import Header from "./components/Header";
+import { subjectsConst } from "./constants/subjects";
 
 function App() {
-  const [subjects, setSubjects] = useState([]);
+  const [subjects, setSubjects] = useState(() => {
+    const storedSubjects = localStorage.getItem("subjects");
+    return storedSubjects ? JSON.parse(storedSubjects) : subjectsConst;
+  });
+
   const [topSubjectsCount, setTopSubjectsCount] = useState(5);
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [initialized, setInitialized] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false); // Track unsaved changes
 
-  // Initialize with default subjects only once
-  useEffect(() => {
-    if (!initialized && subjects.length === 0) {
-      setSubjects([
-        {
-          id: 1,
-          name: "HS22201 Entrepreneurship and Startup",
-          present: 0,
-          total: 21,
-        },
-        {
-          id: 2,
-          name: "HS22277 Indian Constitution",
-          present: 0,
-          total: 16,
-        },
-        {
-          id: 3,
-          name: "CS22200 Discrete Mathematics",
-          present: 0,
-          total: 31,
-        },
-        {
-          id: 4,
-          name: "CS22201 Computer Organization and Architecture",
-          present: 0,
-          total: 15,
-        },
-        {
-          id: 5,
-          name: "CS22202 Programming in Java",
-          present: 0,
-          total: 11,
-        },
-        {
-          id: 6,
-          name: "CS22203 Design and Analysis of Algorithms",
-          present: 0,
-          total: 22,
-        },
-      ]);
-      setInitialized(true);
-    }
-  }, [initialized, subjects.length]);
+  const saveSubjectsToLocalStorage = () => {
+    localStorage.setItem("subjects", JSON.stringify(subjects));
+    setHasChanges(false); // Reset change tracker after saving
+  };
 
   const addSubject = () => {
-    const newSubject = {
-      id: Date.now(),
-      name: "",
-      present: 0,
-      total: 0,
-    };
-
-    setSubjects((prevSubjects) => [...prevSubjects, newSubject]);
+    setSubjects((prevSubjects) => [
+      ...prevSubjects,
+      { id: Date.now(), name: "", present: 0, total: 0 },
+    ]);
+    setHasChanges(true);
   };
 
   const removeSubject = (id) => {
-    setSubjects((prevSubjects) =>
-      prevSubjects.filter((subject) => subject.id !== id),
-    );
+    setSubjects((prevSubjects) => prevSubjects.filter((subject) => subject.id !== id));
+    setHasChanges(true);
   };
 
   const updateSubject = (id, field, value) => {
     setSubjects((prevSubjects) =>
-      prevSubjects.map((subject) => {
-        if (subject.id === id) {
-          if (field === 'present' || field === 'total') {
-            return { ...subject, [field]: Number(value) };
-          }
-          return { ...subject, [field]: value };
-        }
-        return subject;
-      }),
+      prevSubjects.map((subject) =>
+        subject.id === id
+          ? {
+              ...subject,
+              [field]: field === "present" || field === "total" ? Number(value) : value,
+            }
+          : subject
+      )
     );
+    setHasChanges(true);
   };
 
-  const calculateAttendance = (present, total) => {
-    return total > 0 ? (present / total) * 100 : 0;
-  };
+  const calculateAttendance = (present, total) => (total > 0 ? (present / total) * 100 : 0);
 
   const generateCombinations = (array, k) => {
     const result = [];
@@ -100,7 +58,6 @@ function App() {
         result.push([...current]);
         return;
       }
-
       for (let i = start; i < array.length; i++) {
         current.push(array[i]);
         combine(i + 1, current);
@@ -113,61 +70,37 @@ function App() {
   };
 
   const calculateCombinationAttendance = (subjects) => {
-    let totalPresent = 0;
-    let totalClasses = 0;
-
-    subjects.forEach((subject) => {
-      totalPresent += Number(subject.present);
-      totalClasses += Number(subject.total);
-    });
-
+    const totalPresent = subjects.reduce((sum, s) => sum + Number(s.present), 0);
+    const totalClasses = subjects.reduce((sum, s) => sum + Number(s.total), 0);
     return {
       totalPresent,
       totalClasses,
-      percentage:
-        totalClasses > 0 ? calculateAttendance(totalPresent, totalClasses) : 0,
+      percentage: totalClasses > 0 ? calculateAttendance(totalPresent, totalClasses) : 0,
     };
   };
 
   const calculateBestCombinations = () => {
-    // Prepare subject data with percentages
-    const subjectsData = subjects.map((subject) => {
-      const percentage = calculateAttendance(
-        Number(subject.present), 
-        Number(subject.total)
-      );
-      return {
-        ...subject,
-        percentage,
-      };
-    });
+    const subjectsData = subjects.map((subject) => ({
+      ...subject,
+      percentage: calculateAttendance(Number(subject.present), Number(subject.total)),
+    }));
 
-    // Validate inputs
     if (subjectsData.length === 0) {
       alert("Please add at least one subject.");
       return;
     }
 
     if (topSubjectsCount > subjectsData.length) {
-      alert(
-        `You only have ${subjectsData.length} subjects. Please enter a smaller number.`,
-      );
+      alert(`You only have ${subjectsData.length} subjects. Please enter a smaller number.`);
       return;
     }
 
-    // Generate all possible combinations of subjects
     const combinations = generateCombinations(subjectsData, topSubjectsCount);
+    const combinationResults = combinations.map((combo) => ({
+      subjects: combo,
+      ...calculateCombinationAttendance(combo),
+    }));
 
-    // Calculate attendance for each combination
-    const combinationResults = combinations.map((combo) => {
-      const attendanceResult = calculateCombinationAttendance(combo);
-      return {
-        subjects: combo,
-        ...attendanceResult,
-      };
-    });
-
-    // Sort results by percentage (highest first)
     combinationResults.sort((a, b) => b.percentage - a.percentage);
 
     setResults(combinationResults);
@@ -187,11 +120,7 @@ function App() {
   };
 
   const handleTopSubjectsBlur = () => {
-    const validValue =
-      topSubjectsCount === ""
-        ? 1
-        : Math.max(1, Math.min(topSubjectsCount, subjects.length));
-    setTopSubjectsCount(validValue);
+    setTopSubjectsCount(Math.max(1, Math.min(topSubjectsCount, subjects.length)));
   };
 
   return (
@@ -216,6 +145,13 @@ function App() {
             <div className="controls">
               <button className="btn btn-add" onClick={addSubject}>
                 <span className="btn-icon">+</span> Add Subject
+              </button>
+
+              <button
+                className="btn btn-save"
+                onClick={saveSubjectsToLocalStorage}
+              >
+                <span className="btn-icon">💾</span> Save Changes
               </button>
 
               <div className="top-subjects-control">

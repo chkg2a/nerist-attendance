@@ -18,17 +18,6 @@ const SubjectForm = ({ subject, updateSubject, removeSubject }) => {
     setPercentage(newPercentage);
   }, [localPresent, localTotal]);
 
-  // const handlePresentChange = (e) => {
-  //   const value = parseInt(e.target.value) || 0;
-  //   setLocalPresent(value);
-  //   updateSubject(subject.id, 'present', value);
-  // };
-  //
-  // const handleTotalChange = (e) => {
-  //   const value = parseInt(e.target.value) || 1;
-  //   setLocalTotal(value);
-  //   updateSubject(subject.id, 'total', value);
-  // };
   const handlePresentChange = (e) => {
     const value = e.target.value;
     if (value === "" || /^\d+$/.test(value)) {
