@@ -6,19 +6,51 @@ import Header from "./components/Header";
 import { subjectsConst } from "./constants/subjects";
 
 function App() {
+  // Load from localStorage or use default
+  const storedDepartment = localStorage.getItem("department") || "CS";
+  const storedSemester = localStorage.getItem("semester") || "4th Semester";
+
+  const [department, setDepartment] = useState(storedDepartment);
+  const [semester, setSemester] = useState(storedSemester);
+  const [selectionLocked, setSelectionLocked] = useState(false); // Toggle visibility
   const [subjects, setSubjects] = useState(() => {
     const storedSubjects = localStorage.getItem("subjects");
-    return storedSubjects ? JSON.parse(storedSubjects) : subjectsConst;
+    return storedSubjects
+      ? JSON.parse(storedSubjects)
+      : subjectsConst[storedDepartment][storedSemester];
   });
 
   const [topSubjectsCount, setTopSubjectsCount] = useState(5);
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false); // Track unsaved changes
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Save selected department & semester
+  useEffect(() => {
+    localStorage.setItem("department", department);
+    localStorage.setItem("semester", semester);
+  }, [department, semester]);
 
   const saveSubjectsToLocalStorage = () => {
     localStorage.setItem("subjects", JSON.stringify(subjects));
-    setHasChanges(false); // Reset change tracker after saving
+    setHasChanges(false);
+  };
+
+  const handleDepartmentChange = (e) => {
+    setDepartment(e.target.value);
+  };
+
+  const handleSemesterChange = (e) => {
+    setSemester(e.target.value);
+  };
+
+  const handleSelectSubjects = () => {
+    setSubjects(subjectsConst[department][semester]); // Update subjects
+    setSelectionLocked(true); // Lock selection
+  };
+
+  const handleChangeSelection = () => {
+    setSelectionLocked(false); // Unlock selection
   };
 
   const addSubject = () => {
@@ -30,7 +62,9 @@ function App() {
   };
 
   const removeSubject = (id) => {
-    setSubjects((prevSubjects) => prevSubjects.filter((subject) => subject.id !== id));
+    setSubjects((prevSubjects) =>
+      prevSubjects.filter((subject) => subject.id !== id),
+    );
     setHasChanges(true);
   };
 
@@ -40,19 +74,22 @@ function App() {
         subject.id === id
           ? {
               ...subject,
-              [field]: field === "present" || field === "total" ? Number(value) : value,
+              [field]:
+                field === "present" || field === "total"
+                  ? Number(value)
+                  : value,
             }
-          : subject
-      )
+          : subject,
+      ),
     );
     setHasChanges(true);
   };
 
-  const calculateAttendance = (present, total) => (total > 0 ? (present / total) * 100 : 0);
+  const calculateAttendance = (present, total) =>
+    total > 0 ? (present / total) * 100 : 0;
 
   const generateCombinations = (array, k) => {
     const result = [];
-
     function combine(start, current) {
       if (current.length === k) {
         result.push([...current]);
@@ -64,25 +101,31 @@ function App() {
         current.pop();
       }
     }
-
     combine(0, []);
     return result;
   };
 
   const calculateCombinationAttendance = (subjects) => {
-    const totalPresent = subjects.reduce((sum, s) => sum + Number(s.present), 0);
+    const totalPresent = subjects.reduce(
+      (sum, s) => sum + Number(s.present),
+      0,
+    );
     const totalClasses = subjects.reduce((sum, s) => sum + Number(s.total), 0);
     return {
       totalPresent,
       totalClasses,
-      percentage: totalClasses > 0 ? calculateAttendance(totalPresent, totalClasses) : 0,
+      percentage:
+        totalClasses > 0 ? calculateAttendance(totalPresent, totalClasses) : 0,
     };
   };
 
   const calculateBestCombinations = () => {
     const subjectsData = subjects.map((subject) => ({
       ...subject,
-      percentage: calculateAttendance(Number(subject.present), Number(subject.total)),
+      percentage: calculateAttendance(
+        Number(subject.present),
+        Number(subject.total),
+      ),
     }));
 
     if (subjectsData.length === 0) {
@@ -91,7 +134,9 @@ function App() {
     }
 
     if (topSubjectsCount > subjectsData.length) {
-      alert(`You only have ${subjectsData.length} subjects. Please enter a smaller number.`);
+      alert(
+        `You only have ${subjectsData.length} subjects. Please enter a smaller number.`,
+      );
       return;
     }
 
@@ -120,7 +165,9 @@ function App() {
   };
 
   const handleTopSubjectsBlur = () => {
-    setTopSubjectsCount(Math.max(1, Math.min(topSubjectsCount, subjects.length)));
+    setTopSubjectsCount(
+      Math.max(1, Math.min(topSubjectsCount, subjects.length)),
+    );
   };
 
   return (
@@ -128,6 +175,48 @@ function App() {
       <div className="app-container">
         <div className="app-content">
           <Header />
+
+          <div className="preset-selection">
+            {selectionLocked ? (
+              <>
+                <p>
+                  Selected: <strong>{department}</strong> -{" "}
+                  <strong>{semester}</strong>
+                </p>
+                <button
+                  onClick={handleChangeSelection}
+                  className="btn btn-edit"
+                >
+                  CHANGE
+                </button>
+              </>
+            ) : (
+              <>
+                <label>Select Department:</label>
+                <select value={department} onChange={handleDepartmentChange}>
+                  {Object.keys(subjectsConst).map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+
+                <label>Select Semester:</label>
+                <select value={semester} onChange={handleSemesterChange}>
+                  {Object.keys(subjectsConst[department]).map((sem) => (
+                    <option key={sem} value={sem}>
+                      {sem}
+                    </option>
+                  ))}
+                </select>
+
+                <button onClick={handleSelectSubjects} className="btn btn-add">
+                  SELECT
+                </button>
+              </>
+            )}
+          </div>
+
           <div className="form-container">
             <h2 className="section-title">Your Subjects</h2>
 
