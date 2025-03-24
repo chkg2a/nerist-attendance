@@ -103,7 +103,6 @@ const SubjectForm = ({ subject, updateSubject, removeSubject }) => {
             type="number"
             id={`present-${subject.id}`}
             min="0"
-            max={localTotal}
             value={localPresent}
             onChange={handlePresentChange}
             onBlur={() => handleBlur("present")}
@@ -120,7 +119,7 @@ const SubjectForm = ({ subject, updateSubject, removeSubject }) => {
             min="1"
             value={localTotal}
             onChange={handleTotalChange}
-            onBlur={() => handleBlur("present")}
+            onBlur={() => handleBlur("total")}
           />
         </div>
       </div>

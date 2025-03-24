@@ -10,10 +10,11 @@ function App() {
   const [topSubjectsCount, setTopSubjectsCount] = useState(5);
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
-  // Initialize with default subjects
+  // Initialize with default subjects only once
   useEffect(() => {
-    if (subjects.length === 0) {
+    if (!initialized && subjects.length === 0) {
       setSubjects([
         {
           id: 1,
@@ -52,15 +53,16 @@ function App() {
           total: 22,
         },
       ]);
+      setInitialized(true);
     }
-  }, []);
+  }, [initialized, subjects.length]);
 
   const addSubject = () => {
     const newSubject = {
       id: Date.now(),
       name: "",
       present: 0,
-      total: 1,
+      total: 0,
     };
 
     setSubjects((prevSubjects) => [...prevSubjects, newSubject]);
@@ -74,9 +76,16 @@ function App() {
 
   const updateSubject = (id, field, value) => {
     setSubjects((prevSubjects) =>
-      prevSubjects.map((subject) =>
-        subject.id === id ? { ...subject, [field]: value } : subject,
-      ),
+      prevSubjects.map((subject) => {
+        if (subject.id === id) {
+          if (field === 'present' || field === 'total') {
+            console.log(field)
+            return { ...subject, [field]: Number(value) };
+          }
+          return { ...subject, [field]: value };
+        }
+        return subject;
+      }),
     );
   };
 
@@ -109,8 +118,8 @@ function App() {
     let totalClasses = 0;
 
     subjects.forEach((subject) => {
-      totalPresent += subject.present;
-      totalClasses += subject.total;
+      totalPresent += Number(subject.present);
+      totalClasses += Number(subject.total);
     });
 
     return {
@@ -124,7 +133,10 @@ function App() {
   const calculateBestCombinations = () => {
     // Prepare subject data with percentages
     const subjectsData = subjects.map((subject) => {
-      const percentage = calculateAttendance(subject.present, subject.total);
+      const percentage = calculateAttendance(
+        Number(subject.present), 
+        Number(subject.total)
+      );
       return {
         ...subject,
         percentage,
